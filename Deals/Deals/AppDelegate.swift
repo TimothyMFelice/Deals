@@ -21,15 +21,6 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
         
-        service.request(.details(id: "")) { (result) in
-            switch result {
-            case .success(let response):
-                let details = try? self.jsonDecoder.decode(Details.self, from: response.data)
-            case .failure(let error):
-                print("Failed to get details \(error)")
-            }
-        }
-        
         jsonDecoder.keyDecodingStrategy = .convertFromSnakeCase
         
         locationService.didChangeStatus = { [weak self] success in
@@ -57,10 +48,24 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
                 .instantiateViewController(withIdentifier: "RestaurantNavigationController") as? UINavigationController
             window.rootViewController = nav
             locationService.getLocation()
+            (nav?.topViewController as? RestaurantTableViewController)?.delegate = self
         }
         window.makeKeyAndVisible()
         
         return true
+    }
+    
+    private func loadDetails(withId id: String) {
+        service.request(.details(id: id)) { [weak self] (result) in
+            switch result {
+            case .success(let response):
+                guard let strongSelf = self else { return }
+                let details = try? strongSelf.jsonDecoder.decode(Details.self, from: response.data)
+                print("Details: \n\n \(details)")
+            case .failure(let error):
+                print("Failed to get details \(error)")
+            }
+        }
     }
     
     private func loadBusinesses(with coordinate: CLLocationCoordinate2D) {
@@ -81,8 +86,12 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     }
 }
 
-extension AppDelegate: LocationActions {
+extension AppDelegate: LocationActions, ListActions {
     func didTapAllow() {
         locationService.requestLocationAuthorization()
+    }
+    
+    func didTapCell(_ viewModel: RestaurantListViewModel) {
+        loadDetails(withId: viewModel.id)
     }
 }
