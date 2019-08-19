@@ -23,6 +23,7 @@ class LocationViewController: UIViewController {
         locationView.didTapAllow = {
             self.delegate?.didTapAllow()
         }
+        
     }
     
     override func didReceiveMemoryWarning() {

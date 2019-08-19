@@ -19,8 +19,7 @@ class RestaurantTableViewController: UITableViewController {
             tableView.reloadData()
         }
     }
-    
-    weak var delegate: ListActions?
+    weak var delegete: ListActions?
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -47,7 +46,6 @@ class RestaurantTableViewController: UITableViewController {
     
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         let vm = viewModels[indexPath.row]
-        delegate?.didTapCell(vm)
+        delegete?.didTapCell(vm)
     }
-    
 }

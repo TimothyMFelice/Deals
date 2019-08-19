@@ -18,6 +18,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     let storyboard = UIStoryboard(name: "Main", bundle: nil)
     let service = MoyaProvider<YelpService.BusinessesProvider>()
     let jsonDecoder = JSONDecoder()
+    var navigationController: UINavigationController?
     
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
         
@@ -46,9 +47,10 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         default:
             let nav = storyboard
                 .instantiateViewController(withIdentifier: "RestaurantNavigationController") as? UINavigationController
+            self.navigationController = nav
             window.rootViewController = nav
             locationService.getLocation()
-            (nav?.topViewController as? RestaurantTableViewController)?.delegate = self
+            (nav?.topViewController as? RestaurantTableViewController)?.delegete = self
         }
         window.makeKeyAndVisible()
         
@@ -60,8 +62,10 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
             switch result {
             case .success(let response):
                 guard let strongSelf = self else { return }
-                let details = try? strongSelf.jsonDecoder.decode(Details.self, from: response.data)
-                print("Details: \n\n \(details)")
+                if let details = try? strongSelf.jsonDecoder.decode(Details.self, from: response.data) {
+                    let detailsViewModel = DetailsViewModel(details: details)
+                    (strongSelf.navigationController?.topViewController as? DetailsFoodViewController)?.viewModel = detailsViewModel
+                }
             case .failure(let error):
                 print("Failed to get details \(error)")
             }
@@ -74,7 +78,9 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
             case .success(let response):
                 guard let strongSelf = self else { return }
                 let root = try? strongSelf.jsonDecoder.decode(Root.self, from: response.data)
-                let viewModels = root?.businesses.compactMap(RestaurantListViewModel.init).sorted(by: { $0.distance < $1.distance})
+                let viewModels = root?.businesses
+                    .compactMap(RestaurantListViewModel.init)
+                    .sorted(by: { $0.distance < $1.distance })
                 if let nav = strongSelf.window.rootViewController as? UINavigationController,
                     let restaurantListViewController = nav.topViewController as? RestaurantTableViewController {
                     restaurantListViewController.viewModels = viewModels ?? []
